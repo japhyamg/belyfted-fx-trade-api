@@ -1,0 +1,1591 @@
+import React, { useState } from 'react';
+import { CheckCircle, Circle, ChevronDown, ChevronRight, Copy, Check } from 'lucide-react';
+
+const FXTradeSetup = () => {
+  const [expandedSections, setExpandedSections] = useState({});`} />
+      </Section>
+
+      <Section title="7. Database Seeders" id="seeders">
+        <p className="mb-3 text-gray-700">Create database seeders:</p>
+
+        <CodeBlock id="create-seeders" code={`php artisan make:seeder UserSeeder
+php artisan make:seeder MarketRateSeeder`} />
+
+        <p className="mb-3 text-gray-700 mt-4">Market Rate Seeder:</p>
+        <CodeBlock id="market-seeder" language="php" code={`<?php
+// database/seeders/MarketRateSeeder.php
+namespace Database\\Seeders;
+
+use App\\Models\\MarketRate;
+use Illuminate\\Database\\Seeder;
+
+class MarketRateSeeder extends Seeder
+{
+    public function run(): void
+    {
+        $rates = [
+            ['pair' => 'GBP/EUR', 'base_currency' => 'GBP', 'quote_currency' => 'EUR', 'rate' => 1.145, 'bid' => 1.144, 'ask' => 1.146],
+            ['pair' => 'GBP/USD', 'base_currency' => 'GBP', 'quote_currency' => 'USD', 'rate' => 1.268, 'bid' => 1.267, 'ask' => 1.269],
+            ['pair' => 'EUR/USD', 'base_currency' => 'EUR', 'quote_currency' => 'USD', 'rate' => 1.107, 'bid' => 1.106, 'ask' => 1.108],
+            ['pair' => 'USD/NGN', 'base_currency' => 'USD', 'quote_currency' => 'NGN', 'rate' => 1650.50, 'bid' => 1649.00, 'ask' => 1652.00],
+            ['pair' => 'GBP/NGN', 'base_currency' => 'GBP', 'quote_currency' => 'NGN', 'rate' => 2093.25, 'bid' => 2090.00, 'ask' => 2096.50],
+            ['pair' => 'EUR/NGN', 'base_currency' => 'EUR', 'quote_currency' => 'NGN', 'rate' => 1827.30, 'bid' => 1825.00, 'ask' => 1829.60],
+        ];
+
+        foreach ($rates as $rate) {
+            MarketRate::updateOrCreate(
+                ['pair' => $rate['pair']],
+                $rate
+            );
+        }
+    }
+}`} />
+
+        <p className="mb-3 text-gray-700 mt-4">User and Account Seeder:</p>
+        <CodeBlock id="user-seeder" language="php" code={`<?php
+// database/seeders/UserSeeder.php
+namespace Database\\Seeders;
+
+use App\\Models\\User;
+use App\\Models\\Account;
+use Illuminate\\Database\\Seeder;
+use Illuminate\\Support\\Facades\\Hash;
+
+class UserSeeder extends Seeder
+{
+    public function run(): void
+    {
+        $user = User::create([
+            'name' => 'Demo User',
+            'email' => 'demo@belyfted.com',
+            'password' => Hash::make('password123'),
+        ]);
+
+        Account::create([
+            'user_id' => $user->id,
+            'name' => 'GBP Main Account',
+            'currency' => 'GBP',
+            'balance' => 10000.00,
+            'status' => 'active',
+        ]);
+
+        Account::create([
+            'user_id' => $user->id,
+            'name' => 'EUR Savings Account',
+            'currency' => 'EUR',
+            'balance' => 5000.00,
+            'status' => 'active',
+        ]);
+
+        Account::create([
+            'user_id' => $user->id,
+            'name' => 'USD Trading Account',
+            'currency' => 'USD',
+            'balance' => 8000.00,
+            'status' => 'active',
+        ]);
+
+        Account::create([
+            'user_id' => $user->id,
+            'name' => 'NGN Local Account',
+            'currency' => 'NGN',
+            'balance' => 1000000.00,
+            'status' => 'active',
+        ]);
+    }
+}`} />
+
+        <p className="mb-3 text-gray-700 mt-4">Database Seeder:</p>
+        <CodeBlock id="db-seeder" language="php" code={`<?php
+// database/seeders/DatabaseSeeder.php
+namespace Database\\Seeders;
+
+use Illuminate\\Database\\Seeder;
+
+class DatabaseSeeder extends Seeder
+{
+    public function run(): void
+    {
+        $this->call([
+            UserSeeder::class,
+            MarketRateSeeder::class,
+        ]);
+    }
+}`} />
+
+        <p className="mb-3 text-gray-700 mt-4">Run migrations and seeders:</p>
+        <CodeBlock id="run-migrations" code={`php artisan migrate:fresh --seed`} />
+      </Section>
+
+      <Section title="8. Testing" id="testing">
+        <p className="mb-3 text-gray-700">Create comprehensive tests:</p>
+
+        <CodeBlock id="create-tests" code={`php artisan make:test TradeExecutionTest
+php artisan make:test AccountOwnershipTest
+php artisan make:test AuthenticationTest`} />
+
+        <p className="mb-3 text-gray-700 mt-4">Create Model Factories first:</p>
+        <CodeBlock id="factories" code={`php artisan make:factory AccountFactory
+php artisan make:factory TradeFactory`} />
+
+        <p className="mb-3 text-gray-700 mt-4">Account Factory:</p>
+        <CodeBlock id="account-factory" language="php" code={`<?php
+// database/factories/AccountFactory.php
+namespace Database\\Factories;
+
+use App\\Models\\User;
+use Illuminate\\Database\\Eloquent\\Factories\\Factory;
+
+class AccountFactory extends Factory
+{
+    public function definition(): array
+    {
+        return [
+            'user_id' => User::factory(),
+            'name' => fake()->words(3, true) . ' Account',
+            'currency' => fake()->randomElement(['GBP', 'EUR', 'USD', 'NGN']),
+            'balance' => fake()->randomFloat(2, 100, 10000),
+            'status' => 'active',
+        ];
+    }
+}`} />
+
+        <p className="mb-3 text-gray-700 mt-4">Trade Execution Test:</p>
+        <CodeBlock id="trade-test" language="php" code={`<?php
+// tests/Feature/TradeExecutionTest.php
+namespace Tests\\Feature;
+
+use App\\Models\\User;
+use App\\Models\\Account;
+use App\\Models\\MarketRate;
+use Illuminate\\Foundation\\Testing\\RefreshDatabase;
+use Tests\\TestCase;
+
+class TradeExecutionTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Seed market rates for testing
+        MarketRate::create([
+            'pair' => 'GBP/EUR',
+            'base_currency' => 'GBP',
+            'quote_currency' => 'EUR',
+            'rate' => 1.145,
+            'bid' => 1.144,
+            'ask' => 1.146,
+        ]);
+    }
+
+    public function test_successful_trade_execution(): void
+    {
+        $user = User::factory()->create();
+
+        $fromAccount = Account::factory()->create([
+            'user_id' => $user->id,
+            'currency' => 'GBP',
+            'balance' => 1000.00,
+        ]);
+
+        $toAccount = Account::factory()->create([
+            'user_id' => $user->id,
+            'currency' => 'EUR',
+            'balance' => 500.00,
+        ]);
+
+        $response = $this->actingAs($user, 'sanctum')
+            ->postJson('/api/trades/execute', [
+                'from_account_id' => $fromAccount->id,
+                'to_account_id' => $toAccount->id,
+                'from_currency' => 'GBP',
+                'to_currency' => 'EUR',
+                'from_amount' => 100.00,
+                'side' => 'SELL',
+                'client_order_id' => 'test-order-123',
+            ]);
+
+        $response->assertStatus(201)
+            ->assertJsonStructure([
+                'trade_id',
+                'from_account_id',
+                'to_account_id',
+                'from_currency',
+                'to_currency',
+                'from_amount',
+                'to_amount',
+                'rate',
+                'status',
+                'executed_at',
+            ]);
+
+        $this->assertDatabaseHas('trades', [
+            'user_id' => $user->id,
+            'from_account_id' => $fromAccount->id,
+            'to_account_id' => $toAccount->id,
+            'status' => 'EXECUTED',
+        ]);
+
+        $fromAccount->refresh();
+        $this->assertEquals(900.00, $fromAccount->balance);
+
+        $toAccount->refresh();
+        $this->assertGreaterThan(500.00, $toAccount->balance);
+    }
+
+    public function test_insufficient_balance_fails(): void
+    {
+        $user = User::factory()->create();
+
+        $fromAccount = Account::factory()->create([
+            'user_id' => $user->id,
+            'currency' => 'GBP',
+            'balance' => 50.00,
+        ]);
+
+        $response = $this->actingAs($user, 'sanctum')
+            ->postJson('/api/trades/execute', [
+                'from_account_id' => $fromAccount->id,
+                'from_currency' => 'GBP',
+                'to_currency' => 'EUR',
+                'from_amount' => 100.00,
+                'side' => 'SELL',
+            ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['from_amount']);
+    }
+
+    public function test_idempotency_prevents_duplicate_trades(): void
+    {
+        $user = User::factory()->create();
+
+        $fromAccount = Account::factory()->create([
+            'user_id' => $user->id,
+            'currency' => 'GBP',
+            'balance' => 1000.00,
+        ]);
+
+        $payload = [
+            'from_account_id' => $fromAccount->id,
+            'from_currency' => 'GBP',
+            'to_currency' => 'EUR',
+            'from_amount' => 100.00,
+            'side' => 'SELL',
+            'client_order_id' => 'unique-order-456',
+        ];
+
+        $response1 = $this->actingAs($user, 'sanctum')
+            ->postJson('/api/trades/execute', $payload);
+
+        $response1->assertStatus(201);
+        $tradeId1 = $response1->json('trade_id');
+
+        $response2 = $this->actingAs($user, 'sanctum')
+            ->postJson('/api/trades/execute', $payload);
+
+        $response2->assertStatus(201);
+        $tradeId2 = $response2->json('trade_id');
+
+        $this->assertEquals($tradeId1, $tradeId2);
+
+        $fromAccount->refresh();
+        $this->assertEquals(900.00, $fromAccount->balance);
+    }
+
+    public function test_account_ownership_validation(): void
+    {
+        $user1 = User::factory()->create();
+        $user2 = User::factory()->create();
+
+        $user2Account = Account::factory()->create([
+            'user_id' => $user2->id,
+            'currency' => 'GBP',
+            'balance' => 1000.00,
+        ]);
+
+        $response = $this->actingAs($user1, 'sanctum')
+            ->postJson('/api/trades/execute', [
+                'from_account_id' => $user2Account->id,
+                'from_currency' => 'GBP',
+                'to_currency' => 'EUR',
+                'from_amount' => 100.00,
+                'side' => 'SELL',
+            ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['from_account_id']);
+    }
+
+    public function test_validation_errors_for_missing_fields(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user, 'sanctum')
+            ->postJson('/api/trades/execute', []);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors([
+                'from_account_id',
+                'from_currency',
+                'to_currency',
+                'from_amount',
+                'side',
+            ]);
+    }
+
+    public function test_same_currency_trade_fails(): void
+    {
+        $user = User::factory()->create();
+
+        $fromAccount = Account::factory()->create([
+            'user_id' => $user->id,
+            'currency' => 'GBP',
+            'balance' => 1000.00,
+        ]);
+
+        $response = $this->actingAs($user, 'sanctum')
+            ->postJson('/api/trades/execute', [
+                'from_account_id' => $fromAccount->id,
+                'from_currency' => 'GBP',
+                'to_currency' => 'GBP',
+                'from_amount' => 100.00,
+                'side' => 'SELL',
+            ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['to_currency']);
+    }
+}`} />
+
+        <p className="mb-3 text-gray-700 mt-4">Account Ownership Test:</p>
+        <CodeBlock id="account-test" language="php" code={`<?php
+// tests/Feature/AccountOwnershipTest.php
+namespace Tests\\Feature;
+
+use App\\Models\\User;
+use App\\Models\\Account;
+use Illuminate\\Foundation\\Testing\\RefreshDatabase;
+use Tests\\TestCase;
+
+class AccountOwnershipTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_user_can_list_own_accounts(): void
+    {
+        $user = User::factory()->create();
+
+        Account::factory()->count(3)->create(['user_id' => $user->id]);
+        Account::factory()->count(2)->create(); // Other user accounts
+
+        $response = $this->actingAs($user, 'sanctum')
+            ->getJson('/api/accounts');
+
+        $response->assertStatus(200)
+            ->assertJsonCount(3, 'accounts');
+    }
+
+    public function test_user_can_view_own_account_details(): void
+    {
+        $user = User::factory()->create();
+
+        $account = Account::factory()->create([
+            'user_id' => $user->id,
+            'name' => 'Test Account',
+            'currency' => 'GBP',
+            'balance' => 1000.00,
+        ]);
+
+        $response = $this->actingAs($user, 'sanctum')
+            ->getJson("/api/accounts/{$account->id}");
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'id' => $account->id,
+                'name' => 'Test Account',
+                'currency' => 'GBP',
+            ]);
+    }
+
+    public function test_user_cannot_view_other_users_account(): void
+    {
+        $user1 = User::factory()->create();
+        $user2 = User::factory()->create();
+
+        $user2Account = Account::factory()->create(['user_id' => $user2->id]);
+
+        $response = $this->actingAs($user1, 'sanctum')
+            ->getJson("/api/accounts/{$user2Account->id}");
+
+        $response->assertStatus(404);
+    }
+
+    public function test_account_to_account_trade_requires_same_user(): void
+    {
+        $user1 = User::factory()->create();
+        $user2 = User::factory()->create();
+
+        $user1Account = Account::factory()->create([
+            'user_id' => $user1->id,
+            'currency' => 'GBP',
+            'balance' => 1000.00,
+        ]);
+
+        $user2Account = Account::factory()->create([
+            'user_id' => $user2->id,
+            'currency' => 'EUR',
+            'balance' => 1000.00,
+        ]);
+
+        $response = $this->actingAs($user1, 'sanctum')
+            ->postJson('/api/trades/execute', [
+                'from_account_id' => $user1Account->id,
+                'to_account_id' => $user2Account->id,
+                'from_currency' => 'GBP',
+                'to_currency' => 'EUR',
+                'from_amount' => 100.00,
+                'side' => 'SELL',
+            ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['to_account_id']);
+    }
+
+    public function test_unauthenticated_user_cannot_access_accounts(): void
+    {
+        $response = $this->getJson('/api/accounts');
+        $response->assertStatus(401);
+    }
+
+    public function test_unauthenticated_user_cannot_execute_trades(): void
+    {
+        $response = $this->postJson('/api/trades/execute', []);
+        $response->assertStatus(401);
+    }
+}`} />
+
+        <p className="mb-3 text-gray-700 mt-4">API Authentication Test:</p>
+        <CodeBlock id="auth-test" language="php" code={`<?php
+// tests/Feature/AuthenticationTest.php
+namespace Tests\\Feature;
+
+use App\\Models\\User;
+use Illuminate\\Foundation\\Testing\\RefreshDatabase;
+use Illuminate\\Support\\Facades\\Hash;
+use Tests\\TestCase;
+
+class AuthenticationTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_user_can_login_with_correct_credentials(): void
+    {
+        $user = User::factory()->create([
+            'email' => 'test@example.com',
+            'password' => Hash::make('password123'),
+        ]);
+
+        $response = $this->postJson('/api/login', [
+            'email' => 'test@example.com',
+            'password' => 'password123',
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJsonStructure([
+                'token',
+                'user' => ['id', 'name', 'email'],
+            ]);
+    }
+
+    public function test_user_cannot_login_with_incorrect_password(): void
+    {
+        $user = User::factory()->create([
+            'email' => 'test@example.com',
+            'password' => Hash::make('password123'),
+        ]);
+
+        $response = $this->postJson('/api/login', [
+            'email' => 'test@example.com',
+            'password' => 'wrongpassword',
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['email']);
+    }
+
+    public function test_user_can_register(): void
+    {
+        $response = $this->postJson('/api/register', [
+            'name' => 'New User',
+            'email' => 'newuser@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ]);
+
+        $response->assertStatus(201)
+            ->assertJsonStructure([
+                'token',
+                'user' => ['id', 'name', 'email'],
+            ]);
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'newuser@example.com',
+        ]);
+    }
+}`} />
+      </Section>
+
+      <Section title="9. Service Provider Bindings" id="providers">
+        <p className="mb-3 text-gray-700">Register repository bindings in AppServiceProvider:</p>
+
+        <CodeBlock id="service-provider" language="php" code={`<?php
+// app/Providers/AppServiceProvider.php
+namespace App\\Providers;
+
+use App\\Repositories\\AccountRepository;
+use App\\Repositories\\Contracts\\AccountRepositoryInterface;
+use Illuminate\\Support\\ServiceProvider;
+
+class AppServiceProvider extends ServiceProvider
+{
+    public function register(): void
+    {
+        $this->app->bind(AccountRepositoryInterface::class, AccountRepository::class);
+    }
+
+    public function boot(): void
+    {
+        //
+    }
+}`} />
+      </Section>
+
+      <Section title="10. Final Steps and GitHub" id="final">
+        <p className="mb-3 text-gray-700">Complete these final setup steps:</p>
+
+        <div className="space-y-4">
+          <div className="flex items-start gap-3">
+            <Circle size={20} className="text-blue-600 mt-1 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="font-medium mb-2">Create .gitignore</p>
+              <CodeBlock id="gitignore" code={`/node_modules
+/public/hot
+/public/storage
+/storage/*.key
+/vendor
+.env
+.env.backup
+.phpunit.result.cache
+docker-compose.override.yml
+Homestead.json
+Homestead.yaml
+npm-debug.log
+yarn-error.log
+/.idea
+/.vscode`} />
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <Circle size={20} className="text-blue-600 mt-1 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="font-medium mb-2">Initialize Git and push to GitHub</p>
+              <CodeBlock id="git-setup" code={`git init
+git add .
+git commit -m "Initial commit: FX Trade API with complete implementation"
+git branch -M main
+git remote add origin https://github.com/yourusername/belyfted-fx-trade-api.git
+git push -u origin main`} />
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <Circle size={20} className="text-blue-600 mt-1 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="font-medium mb-2">Run final tests</p>
+              <CodeBlock id="final-test" code={`php artisan test
+php artisan test --coverage`} />
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <h4 className="font-semibold text-green-900 mb-2">✅ Project Complete!</h4>
+          <p className="text-green-800 text-sm">
+            Your FX Trade API is now ready. All core features are implemented including real-time trading,
+            account-to-account transfers, comprehensive testing, and full documentation.
+          </p>
+        </div>
+      </Section>
+
+      <div className="mt-8 p-6 bg-blue-50 border border-blue-200 rounded-lg">
+        <h3 className="text-lg font-bold text-blue-900 mb-3">📋 Submission Checklist</h3>
+        <div className="space-y-2">
+          {[
+            'All migrations created and tested',
+            'Models with relationships defined',
+            'Repository pattern implemented',
+            'Service layer with business logic',
+            'API endpoints with authentication',
+            'Comprehensive tests written',
+            'README.md with setup instructions',
+            'DESIGN.md with architecture details',
+            'Seeders for demo data',
+            'GitHub repository created',
+            'Rate limiting configured',
+            'Audit logging implemented',
+          ].map((item, index) => (
+            <div key={index} className="flex items-center gap-2">
+              <Circle size={16} className="text-blue-600" />
+              <span className="text-blue-900 text-sm">{item}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default FXTradeSetup;
+  const [copiedCode, setCopiedCode] = useState(null);
+
+  const toggleSection = (section) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
+
+  const copyToClipboard = (text, id) => {
+    navigator.clipboard.writeText(text);
+    setCopiedCode(id);
+    setTimeout(() => setCopiedCode(null), 2000);
+  };
+
+  const CodeBlock = ({ code, id, language = 'bash' }) => (
+    <div className="relative bg-gray-900 rounded-lg p-4 my-3">
+      <button
+        onClick={() => copyToClipboard(code, id)}
+        className="absolute top-2 right-2 p-2 bg-gray-800 hover:bg-gray-700 rounded transition-colors"
+      >
+        {copiedCode === id ? <Check size={16} className="text-green-400" /> : <Copy size={16} className="text-gray-400" />}
+      </button>
+      <pre className="text-sm text-gray-100 overflow-x-auto pr-12">
+        <code>{code}</code>
+      </pre>
+    </div>
+  );
+
+  const Section = ({ title, children, id }) => (
+    <div className="border border-gray-200 rounded-lg mb-4">
+      <button
+        onClick={() => toggleSection(id)}
+        className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+      >
+        <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
+        {expandedSections[id] ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+      </button>
+      {expandedSections[id] && (
+        <div className="p-4 pt-0 border-t border-gray-200">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+
+  return (
+    <div className="max-w-4xl mx-auto p-6 bg-white">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Belyfted FX Trade API</h1>
+        <p className="text-gray-600">Complete Laravel 11 setup guide for the Foreign Exchange Trade API</p>
+      </div>
+
+      <Section title="1. Initial Laravel Setup" id="setup">
+        <p className="mb-3 text-gray-700">Create a new Laravel 11 project and set up the database:</p>
+
+        <CodeBlock id="laravel-install" code={`# Create new Laravel project
+composer create-project laravel/laravel belyfted-fx-trade-api
+cd belyfted-fx-trade-api
+
+# Install Laravel Sanctum
+composer require laravel/sanctum
+php artisan vendor:publish --provider="Laravel\\Sanctum\\SanctumServiceProvider"
+
+# Install additional dependencies
+composer require --dev pestphp/pest
+composer require --dev pestphp/pest-plugin-laravel
+php artisan pest:install`} />
+
+        <p className="mb-3 text-gray-700 mt-4">Configure your .env file:</p>
+        <CodeBlock id="env-config" code={`DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=fx_trade_api
+DB_USERNAME=your_username
+DB_PASSWORD=your_password
+
+CACHE_DRIVER=redis
+QUEUE_CONNECTION=redis
+SESSION_DRIVER=redis`} />
+      </Section>
+
+      <Section title="2. Database Migrations" id="migrations">
+        <p className="mb-3 text-gray-700">Create all required migrations:</p>
+
+        <CodeBlock id="create-migrations" code={`php artisan make:migration create_accounts_table
+php artisan make:migration create_trades_table
+php artisan make:migration create_market_rates_table
+php artisan make:migration create_audit_logs_table`} />
+
+        <p className="mb-3 text-gray-700 mt-4">Accounts migration:</p>
+        <CodeBlock id="accounts-migration" language="php" code={`<?php
+// database/migrations/xxxx_create_accounts_table.php
+use Illuminate\\Database\\Migrations\\Migration;
+use Illuminate\\Database\\Schema\\Blueprint;
+use Illuminate\\Support\\Facades\\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('accounts', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->string('name');
+            $table->string('currency', 3);
+            $table->decimal('balance', 18, 8)->default(0);
+            $table->enum('status', ['active', 'inactive', 'suspended'])->default('active');
+            $table->timestamps();
+
+            $table->index(['user_id', 'currency']);
+            $table->index('status');
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('accounts');
+    }
+};`} />
+
+        <p className="mb-3 text-gray-700 mt-4">Trades migration:</p>
+        <CodeBlock id="trades-migration" language="php" code={`<?php
+// database/migrations/xxxx_create_trades_table.php
+use Illuminate\\Database\\Migrations\\Migration;
+use Illuminate\\Database\\Schema\\Blueprint;
+use Illuminate\\Support\\Facades\\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('trades', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->foreignId('from_account_id')->constrained('accounts');
+            $table->foreignId('to_account_id')->nullable()->constrained('accounts');
+            $table->string('from_currency', 3);
+            $table->string('to_currency', 3);
+            $table->decimal('from_amount', 18, 8);
+            $table->decimal('to_amount', 18, 8);
+            $table->decimal('rate', 18, 8);
+            $table->enum('side', ['BUY', 'SELL']);
+            $table->enum('status', ['PENDING', 'EXECUTED', 'FAILED', 'CANCELLED'])->default('PENDING');
+            $table->string('client_order_id')->unique()->nullable();
+            $table->timestamp('executed_at')->nullable();
+            $table->timestamps();
+
+            $table->index(['user_id', 'status']);
+            $table->index('from_account_id');
+            $table->index('to_account_id');
+            $table->index('client_order_id');
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('trades');
+    }
+};`} />
+
+        <p className="mb-3 text-gray-700 mt-4">Market rates migration:</p>
+        <CodeBlock id="rates-migration" language="php" code={`<?php
+// database/migrations/xxxx_create_market_rates_table.php
+use Illuminate\\Database\\Migrations\\Migration;
+use Illuminate\\Database\\Schema\\Blueprint;
+use Illuminate\\Support\\Facades\\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('market_rates', function (Blueprint $table) {
+            $table->id();
+            $table->string('pair', 7);
+            $table->string('base_currency', 3);
+            $table->string('quote_currency', 3);
+            $table->decimal('rate', 18, 8);
+            $table->decimal('bid', 18, 8)->nullable();
+            $table->decimal('ask', 18, 8)->nullable();
+            $table->timestamps();
+
+            $table->unique('pair');
+            $table->index(['base_currency', 'quote_currency']);
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('market_rates');
+    }
+};`} />
+
+        <p className="mb-3 text-gray-700 mt-4">Audit logs migration:</p>
+        <CodeBlock id="audit-migration" language="php" code={`<?php
+// database/migrations/xxxx_create_audit_logs_table.php
+use Illuminate\\Database\\Migrations\\Migration;
+use Illuminate\\Database\\Schema\\Blueprint;
+use Illuminate\\Support\\Facades\\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('audit_logs', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->nullable()->constrained()->onDelete('set null');
+            $table->string('action');
+            $table->string('entity_type');
+            $table->unsignedBigInteger('entity_id')->nullable();
+            $table->json('old_values')->nullable();
+            $table->json('new_values')->nullable();
+            $table->string('ip_address', 45)->nullable();
+            $table->text('user_agent')->nullable();
+            $table->timestamps();
+
+            $table->index(['entity_type', 'entity_id']);
+            $table->index(['user_id', 'created_at']);
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('audit_logs');
+    }
+};`} />
+      </Section>
+
+      <Section title="3. Models and Relationships" id="models">
+        <p className="mb-3 text-gray-700">Create Eloquent models:</p>
+
+        <CodeBlock id="create-models" code={`php artisan make:model Account
+php artisan make:model Trade
+php artisan make:model MarketRate
+php artisan make:model AuditLog`} />
+
+        <p className="mb-3 text-gray-700 mt-4">Account Model:</p>
+        <CodeBlock id="account-model" language="php" code={`<?php
+// app/Models/Account.php
+namespace App\\Models;
+
+use Illuminate\\Database\\Eloquent\\Factories\\HasFactory;
+use Illuminate\\Database\\Eloquent\\Model;
+use Illuminate\\Database\\Eloquent\\Relations\\BelongsTo;
+use Illuminate\\Database\\Eloquent\\Relations\\HasMany;
+
+class Account extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'user_id',
+        'name',
+        'currency',
+        'balance',
+        'status',
+    ];
+
+    protected $casts = [
+        'balance' => 'decimal:8',
+    ];
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function tradesFrom(): HasMany
+    {
+        return $this->hasMany(Trade::class, 'from_account_id');
+    }
+
+    public function tradesTo(): HasMany
+    {
+        return $this->hasMany(Trade::class, 'to_account_id');
+    }
+
+    public function hasSufficientBalance(float $amount): bool
+    {
+        return $this->balance >= $amount;
+    }
+
+    public function isActive(): bool
+    {
+        return $this->status === 'active';
+    }
+}`} />
+
+        <p className="mb-3 text-gray-700 mt-4">Trade Model:</p>
+        <CodeBlock id="trade-model" language="php" code={`<?php
+// app/Models/Trade.php
+namespace App\\Models;
+
+use Illuminate\\Database\\Eloquent\\Factories\\HasFactory;
+use Illuminate\\Database\\Eloquent\\Model;
+use Illuminate\\Database\\Eloquent\\Relations\\BelongsTo;
+
+class Trade extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'user_id',
+        'from_account_id',
+        'to_account_id',
+        'from_currency',
+        'to_currency',
+        'from_amount',
+        'to_amount',
+        'rate',
+        'side',
+        'status',
+        'client_order_id',
+        'executed_at',
+    ];
+
+    protected $casts = [
+        'from_amount' => 'decimal:8',
+        'to_amount' => 'decimal:8',
+        'rate' => 'decimal:8',
+        'executed_at' => 'datetime',
+    ];
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function fromAccount(): BelongsTo
+    {
+        return $this->belongsTo(Account::class, 'from_account_id');
+    }
+
+    public function toAccount(): BelongsTo
+    {
+        return $this->belongsTo(Account::class, 'to_account_id');
+    }
+}`} />
+      </Section>
+
+      <Section title="4. Repository Pattern" id="repositories">
+        <p className="mb-3 text-gray-700">Create repository structure:</p>
+
+        <CodeBlock id="create-repos" code={`mkdir -p app/Repositories/Contracts
+mkdir -p app/Repositories`} />
+
+        <p className="mb-3 text-gray-700 mt-4">Account Repository Interface:</p>
+        <CodeBlock id="account-repo-interface" language="php" code={`<?php
+// app/Repositories/Contracts/AccountRepositoryInterface.php
+namespace App\\Repositories\\Contracts;
+
+use App\\Models\\Account;
+use Illuminate\\Support\\Collection;
+
+interface AccountRepositoryInterface
+{
+    public function findById(int $id): ?Account;
+    public function findByUserAndId(int $userId, int $accountId): ?Account;
+    public function getUserAccounts(int $userId): Collection;
+    public function lockForUpdate(int $id): ?Account;
+    public function updateBalance(int $accountId, float $newBalance): bool;
+}`} />
+
+        <p className="mb-3 text-gray-700 mt-4">Account Repository Implementation:</p>
+        <CodeBlock id="account-repo" language="php" code={`<?php
+// app/Repositories/AccountRepository.php
+namespace App\\Repositories;
+
+use App\\Models\\Account;
+use App\\Repositories\\Contracts\\AccountRepositoryInterface;
+use Illuminate\\Support\\Collection;
+
+class AccountRepository implements AccountRepositoryInterface
+{
+    public function findById(int $id): ?Account
+    {
+        return Account::find($id);
+    }
+
+    public function findByUserAndId(int $userId, int $accountId): ?Account
+    {
+        return Account::where('user_id', $userId)
+            ->where('id', $accountId)
+            ->first();
+    }
+
+    public function getUserAccounts(int $userId): Collection
+    {
+        return Account::where('user_id', $userId)
+            ->orderBy('currency')
+            ->get();
+    }
+
+    public function lockForUpdate(int $id): ?Account
+    {
+        return Account::where('id', $id)->lockForUpdate()->first();
+    }
+
+    public function updateBalance(int $accountId, float $newBalance): bool
+    {
+        return Account::where('id', $accountId)
+            ->update(['balance' => $newBalance]);
+    }
+}`} />
+
+        <p className="mb-3 text-gray-700 mt-4">Trade Repository:</p>
+        <CodeBlock id="trade-repo" language="php" code={`<?php
+// app/Repositories/TradeRepository.php
+namespace App\\Repositories;
+
+use App\\Models\\Trade;
+use Illuminate\\Support\\Collection;
+
+class TradeRepository
+{
+    public function create(array $data): Trade
+    {
+        return Trade::create($data);
+    }
+
+    public function findByClientOrderId(string $clientOrderId): ?Trade
+    {
+        return Trade::where('client_order_id', $clientOrderId)->first();
+    }
+
+    public function getUserTrades(int $userId, int $perPage = 20)
+    {
+        return Trade::where('user_id', $userId)
+            ->with(['fromAccount', 'toAccount'])
+            ->orderByDesc('created_at')
+            ->paginate($perPage);
+    }
+
+    public function findById(int $id): ?Trade
+    {
+        return Trade::with(['fromAccount', 'toAccount'])->find($id);
+    }
+}`} />
+      </Section>
+
+      <Section title="5. Service Layer" id="services">
+        <p className="mb-3 text-gray-700">Create the core trade execution service:</p>
+
+        <CodeBlock id="create-services" code={`mkdir -p app/Services
+mkdir -p app/DTOs`} />
+
+        <p className="mb-3 text-gray-700 mt-4">Trade DTO:</p>
+        <CodeBlock id="trade-dto" language="php" code={`<?php
+// app/DTOs/TradeDTO.php
+namespace App\\DTOs;
+
+class TradeDTO
+{
+    public function __construct(
+        public readonly int $userId,
+        public readonly int $fromAccountId,
+        public readonly ?int $toAccountId,
+        public readonly string $fromCurrency,
+        public readonly string $toCurrency,
+        public readonly float $fromAmount,
+        public readonly string $side,
+        public readonly ?string $clientOrderId = null,
+    ) {}
+
+    public static function fromArray(array $data): self
+    {
+        return new self(
+            userId: $data['user_id'],
+            fromAccountId: $data['from_account_id'],
+            toAccountId: $data['to_account_id'] ?? null,
+            fromCurrency: $data['from_currency'],
+            toCurrency: $data['to_currency'],
+            fromAmount: (float) $data['from_amount'],
+            side: $data['side'],
+            clientOrderId: $data['client_order_id'] ?? null,
+        );
+    }
+}`} />
+
+        <p className="mb-3 text-gray-700 mt-4">Market Rate Service:</p>
+        <CodeBlock id="market-service" language="php" code={`<?php
+// app/Services/MarketRateService.php
+namespace App\\Services;
+
+use App\\Models\\MarketRate;
+
+class MarketRateService
+{
+    public function getCurrentRate(string $fromCurrency, string $toCurrency): float
+    {
+        $pair = "{$fromCurrency}/{$toCurrency}";
+
+        $marketRate = MarketRate::where('pair', $pair)->first();
+
+        if ($marketRate) {
+            return (float) $marketRate->rate;
+        }
+
+        $reversePair = "{$toCurrency}/{$fromCurrency}";
+        $reverseRate = MarketRate::where('pair', $reversePair)->first();
+
+        if ($reverseRate) {
+            return 1 / (float) $reverseRate->rate;
+        }
+
+        return $this->simulateRate($fromCurrency, $toCurrency);
+    }
+
+    private function simulateRate(string $from, string $to): float
+    {
+        $baseRates = [
+            'GBP/EUR' => 1.145,
+            'GBP/USD' => 1.268,
+            'EUR/USD' => 1.107,
+            'USD/NGN' => 1650.50,
+            'GBP/NGN' => 2093.25,
+        ];
+
+        $pair = "{$from}/{$to}";
+        $baseRate = $baseRates[$pair] ?? 1.0;
+
+        $fluctuation = ($baseRate * 0.005) * (mt_rand(-100, 100) / 100);
+
+        return round($baseRate + $fluctuation, 8);
+    }
+}`} />
+
+        <p className="mb-3 text-gray-700 mt-4">Audit Log Service:</p>
+        <CodeBlock id="audit-service" language="php" code={`<?php
+// app/Services/AuditLogService.php
+namespace App\\Services;
+
+use App\\Models\\AuditLog;
+
+class AuditLogService
+{
+    public function log(
+        ?int $userId,
+        string $action,
+        string $entityType,
+        ?int $entityId = null,
+        ?array $oldValues = null,
+        ?array $newValues = null
+    ): AuditLog {
+        return AuditLog::create([
+            'user_id' => $userId,
+            'action' => $action,
+            'entity_type' => $entityType,
+            'entity_id' => $entityId,
+            'old_values' => $oldValues,
+            'new_values' => $newValues,
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+        ]);
+    }
+}`} />
+
+        <p className="mb-3 text-gray-700 mt-4">Execute Trade Service:</p>
+        <CodeBlock id="execute-trade-service" language="php" code={`<?php
+// app/Services/ExecuteTradeService.php
+namespace App\\Services;
+
+use App\\DTOs\\TradeDTO;
+use App\\Models\\Trade;
+use App\\Repositories\\AccountRepository;
+use App\\Repositories\\TradeRepository;
+use Illuminate\\Support\\Facades\\DB;
+use Illuminate\\Validation\\ValidationException;
+
+class ExecuteTradeService
+{
+    public function __construct(
+        private readonly AccountRepository $accountRepository,
+        private readonly TradeRepository $tradeRepository,
+        private readonly MarketRateService $marketRateService,
+        private readonly AuditLogService $auditLogService,
+    ) {}
+
+    public function execute(TradeDTO $dto): Trade
+    {
+        if ($dto->clientOrderId) {
+            $existingTrade = $this->tradeRepository->findByClientOrderId($dto->clientOrderId);
+            if ($existingTrade) {
+                return $existingTrade;
+            }
+        }
+
+        return DB::transaction(function () use ($dto) {
+            $fromAccount = $this->accountRepository->lockForUpdate($dto->fromAccountId);
+
+            if (!$fromAccount) {
+                throw ValidationException::withMessages([
+                    'from_account_id' => ['Account not found.']
+                ]);
+            }
+
+            if ($fromAccount->user_id !== $dto->userId) {
+                throw ValidationException::withMessages([
+                    'from_account_id' => ['You do not own this account.']
+                ]);
+            }
+
+            if (!$fromAccount->isActive()) {
+                throw ValidationException::withMessages([
+                    'from_account_id' => ['Account is not active.']
+                ]);
+            }
+
+            if (!$fromAccount->hasSufficientBalance($dto->fromAmount)) {
+                throw ValidationException::withMessages([
+                    'from_amount' => ['Insufficient balance.']
+                ]);
+            }
+
+            $toAccount = null;
+            if ($dto->toAccountId) {
+                $toAccount = $this->accountRepository->lockForUpdate($dto->toAccountId);
+
+                if (!$toAccount || $toAccount->user_id !== $dto->userId) {
+                    throw ValidationException::withMessages([
+                        'to_account_id' => ['Invalid destination account.']
+                    ]);
+                }
+            }
+
+            $rate = $this->marketRateService->getCurrentRate($dto->fromCurrency, $dto->toCurrency);
+            $toAmount = $dto->fromAmount * $rate;
+
+            $trade = $this->tradeRepository->create([
+                'user_id' => $dto->userId,
+                'from_account_id' => $dto->fromAccountId,
+                'to_account_id' => $dto->toAccountId,
+                'from_currency' => $dto->fromCurrency,
+                'to_currency' => $dto->toCurrency,
+                'from_amount' => $dto->fromAmount,
+                'to_amount' => $toAmount,
+                'rate' => $rate,
+                'side' => $dto->side,
+                'status' => 'EXECUTED',
+                'client_order_id' => $dto->clientOrderId,
+                'executed_at' => now(),
+            ]);
+
+            $this->accountRepository->updateBalance(
+                $fromAccount->id,
+                $fromAccount->balance - $dto->fromAmount
+            );
+
+            if ($toAccount) {
+                $this->accountRepository->updateBalance(
+                    $toAccount->id,
+                    $toAccount->balance + $toAmount
+                );
+            }
+
+            $this->auditLogService->log(
+                userId: $dto->userId,
+                action: 'trade_executed',
+                entityType: 'trade',
+                entityId: $trade->id,
+                newValues: $trade->toArray()
+            );
+
+            return $trade->fresh(['fromAccount', 'toAccount']);
+        });
+    }
+}`} />
+      </Section>
+
+      <Section title="6. Controllers and Routes" id="controllers">
+        <p className="mb-3 text-gray-700">Create API controllers:</p>
+
+        <CodeBlock id="create-controllers" code={`php artisan make:controller Api/AuthController
+php artisan make:controller Api/AccountController
+php artisan make:controller Api/TradeController
+php artisan make:controller Api/MarketRateController`} />
+
+        <p className="mb-3 text-gray-700 mt-4">Account Controller:</p>
+        <CodeBlock id="account-controller" language="php" code={`<?php
+// app/Http/Controllers/Api/AccountController.php
+namespace App\\Http\\Controllers\\Api;
+
+use App\\Http\\Controllers\\Controller;
+use App\\Repositories\\AccountRepository;
+use Illuminate\\Http\\JsonResponse;
+use Illuminate\\Http\\Request;
+
+class AccountController extends Controller
+{
+    public function __construct(
+        private readonly AccountRepository $accountRepository
+    ) {}
+
+    public function index(Request $request): JsonResponse
+    {
+        $accounts = $this->accountRepository->getUserAccounts($request->user()->id);
+
+        return response()->json([
+            'accounts' => $accounts
+        ]);
+    }
+
+    public function show(Request $request, int $id): JsonResponse
+    {
+        $account = $this->accountRepository->findByUserAndId(
+            $request->user()->id,
+            $id
+        );
+
+        if (!$account) {
+            return response()->json([
+                'message' => 'Account not found'
+            ], 404);
+        }
+
+        return response()->json($account);
+    }
+}`} />
+
+        <p className="mb-3 text-gray-700 mt-4">Market Rate Controller:</p>
+        <CodeBlock id="market-controller" language="php" code={`<?php
+// app/Http/Controllers/Api/MarketRateController.php
+namespace App\\Http\\Controllers\\Api;
+
+use App\\Http\\Controllers\\Controller;
+use App\\Services\\MarketRateService;
+use Illuminate\\Http\\JsonResponse;
+use Illuminate\\Http\\Request;
+
+class MarketRateController extends Controller
+{
+    public function __construct(
+        private readonly MarketRateService $marketRateService
+    ) {}
+
+    public function getRate(Request $request): JsonResponse
+    {
+        $request->validate([
+            'pair' => 'required|string|regex:/^[A-Z]{3}\\/[A-Z]{3}$/'
+        ]);
+
+        $pair = $request->input('pair');
+        list($fromCurrency, $toCurrency) = explode('/', $pair);
+
+        $rate = $this->marketRateService->getCurrentRate($fromCurrency, $toCurrency);
+
+        return response()->json([
+            'pair' => $pair,
+            'from_currency' => $fromCurrency,
+            'to_currency' => $toCurrency,
+            'rate' => $rate,
+            'timestamp' => now()->toIso8601String(),
+        ]);
+    }
+}`} />
+
+        <p className="mb-3 text-gray-700 mt-4">Auth Controller:</p>
+        <CodeBlock id="auth-controller" language="php" code={`<?php
+// app/Http/Controllers/Api/AuthController.php
+namespace App\\Http\\Controllers\\Api;
+
+use App\\Http\\Controllers\\Controller;
+use App\\Models\\User;
+use Illuminate\\Http\\JsonResponse;
+use Illuminate\\Http\\Request;
+use Illuminate\\Support\\Facades\\Hash;
+use Illuminate\\Validation\\ValidationException;
+
+class AuthController extends Controller
+{
+    public function login(Request $request): JsonResponse
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required',
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            throw ValidationException::withMessages([
+                'email' => ['The provided credentials are incorrect.'],
+            ]);
+        }
+
+        $token = $user->createToken('api-token')->plainTextToken;
+
+        return response()->json([
+            'token' => $token,
+            'user' => $user,
+        ]);
+    }
+
+    public function register(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $user = User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+        ]);
+
+        $token = $user->createToken('api-token')->plainTextToken;
+
+        return response()->json([
+            'token' => $token,
+            'user' => $user,
+        ], 201);
+    }
+}`} />
+
+        <p className="mb-3 text-gray-700 mt-4">Trade Controller:</p>
+        <CodeBlock id="trade-controller" language="php" code={`<?php
+// app/Http/Controllers/Api/TradeController.php
+namespace App\\Http\\Controllers\\Api;
+
+use App\\DTOs\\TradeDTO;
+use App\\Http\\Controllers\\Controller;
+use App\\Http\\Requests\\ExecuteTradeRequest;
+use App\\Services\\ExecuteTradeService;
+use App\\Repositories\\TradeRepository;
+use Illuminate\\Http\\JsonResponse;
+use Illuminate\\Http\\Request;
+
+class TradeController extends Controller
+{
+    public function __construct(
+        private readonly ExecuteTradeService $executeTradeService,
+        private readonly TradeRepository $tradeRepository,
+    ) {}
+
+    public function execute(ExecuteTradeRequest $request): JsonResponse
+    {
+        try {
+            $dto = TradeDTO::fromArray([
+                ...$request->validated(),
+                'user_id' => $request->user()->id,
+            ]);
+
+            $trade = $this->executeTradeService->execute($dto);
+
+            return response()->json([
+                'trade_id' => $trade->id,
+                'from_account_id' => $trade->from_account_id,
+                'to_account_id' => $trade->to_account_id,
+                'from_currency' => $trade->from_currency,
+                'to_currency' => $trade->to_currency,
+                'from_amount' => $trade->from_amount,
+                'to_amount' => $trade->to_amount,
+                'rate' => $trade->rate,
+                'status' => $trade->status,
+                'executed_at' => $trade->executed_at,
+            ], 201);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $e->errors(),
+            ], 422);
+        }
+    }
+
+    public function index(Request $request): JsonResponse
+    {
+        $trades = $this->tradeRepository->getUserTrades($request->user()->id);
+        return response()->json($trades);
+    }
+
+    public function show(Request $request, int $id): JsonResponse
+    {
+        $trade = $this->tradeRepository->findById($id);
+
+        if (!$trade || $trade->user_id !== $request->user()->id) {
+            return response()->json(['message' => 'Trade not found'], 404);
+        }
+
+        return response()->json($trade);
+    }
+}`} />
+
+        <p className="mb-3 text-gray-700 mt-4">Form Request Validation:</p>
+        <CodeBlock id="form-request" code={`php artisan make:request ExecuteTradeRequest`} />
+
+        <CodeBlock id="trade-request" language="php" code={`<?php
+// app/Http/Requests/ExecuteTradeRequest.php
+namespace App\\Http\\Requests;
+
+use Illuminate\\Foundation\\Http\\FormRequest;
+
+class ExecuteTradeRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    public function rules(): array
+    {
+        return [
+            'from_account_id' => ['required', 'integer', 'exists:accounts,id'],
+            'to_account_id' => ['nullable', 'integer', 'exists:accounts,id', 'different:from_account_id'],
+            'from_currency' => ['required', 'string', 'size:3'],
+            'to_currency' => ['required', 'string', 'size:3', 'different:from_currency'],
+            'from_amount' => ['required', 'numeric', 'min:0.00000001'],
+            'side' => ['required', 'in:BUY,SELL'],
+            'client_order_id' => ['nullable', 'string', 'max:255'],
+        ];
+    }
+}`} />
+
+        <p className="mb-3 text-gray-700 mt-4">API Routes:</p>
+        <CodeBlock id="api-routes" language="php" code={`<?php
+// routes/api.php
+use App\\Http\\Controllers\\Api\\AuthController;
+use App\\Http\\Controllers\\Api\\AccountController;
+use App\\Http\\Controllers\\Api\\TradeController;
+use App\\Http\\Controllers\\Api\\MarketRateController;
+use Illuminate\\Support\\Facades\\Route;
+
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/register', [AuthController::class, 'register']);
+
+Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
+    Route::get('/accounts', [AccountController::class, 'index']);
+    Route::get('/accounts/{id}', [AccountController::class, 'show']);
+
+    Route::get('/market/rate', [MarketRateController::class, 'getRate']);
+
+    Route::middleware('throttle:30,1')->group(function () {
+        Route::post('/trades/execute', [TradeController::class, 'execute']);
+    });
+
+    Route::get('/trades', [TradeController::class, 'index']);
+    Route::get('/trades/{id}', [TradeController::class, 'show']);
+});
