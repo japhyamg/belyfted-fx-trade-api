@@ -3,6 +3,7 @@
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
 
 ## Set Up
+- Run: git clone https://github.com/japhyamg/belyfted-fx-trade-api.git
 - Run: composer install
 - Run: php artisan migrate
 - Run: php artisan db:seed
